@@ -2,7 +2,7 @@
 
 **clinical-problem-standardization** is a framework for standardizing free-text clinical problems into  [SNOMED CT Expressions](https://confluence.ihtsdotools.org/display/DOCSTART/7.+SNOMED+CT+Expressions) and [HL7 FHIR resources](https://www.hl7.org/fhir/).
 
-A *clinical problem* is a short description of a patient issue, diagnosis, or concern, such as *"Severe with probable recurrent migraine."* These are found in multiple places in healthcare data, especially in problem lists.
+A *clinical problem* is a short description of a patient issue, diagnosis, or concern, such as *"Severe headache with probable recurrent migraine."* These are found in multiple places in healthcare data, especially in problem lists.
 
 This framework uses natural language processing techniques to parse these problem descriptions into standardized models.
 
@@ -21,6 +21,7 @@ The following dependencies are required to run the code:
 * bert-serving-server/bert-serving-client 1.9.1+
 * Flask 1.0.2+
 * numpy 1.14.5+
+* fhir.resources 5.1.1+
 
 The following will also need to be downloaded/installed:
 
@@ -38,29 +39,29 @@ The following will also need to be downloaded/installed:
 ``CUI2VEC_HOME``: the path to the cui2vec word embedding file
 
 ## Start bert-as-service
-See the [bert-as-service documentation] for options regarding the BERT embedding server. It is recommended to use either a fine-tuned model or a model pre-trained for the biomedical domain. We recommend [clinicalBERT](https://github.com/EmilyAlsentzer/clinicalBERT).
+See the [bert-as-service documentation](https://bert-as-service.readthedocs.io/en/latest/) for options regarding the BERT embedding server. It is recommended to use either a fine-tuned model or a model pre-trained for the biomedical domain. We recommend [clinicalBERT](https://github.com/EmilyAlsentzer/clinicalBERT).
 
 ## Training
 Our framework uses [Snorkel](https://www.snorkel.org/) to create training data without having to manually annotate a training set. Users *are*, however, required to supply a labeled test and validation set.
 
-There are two aspects of training. First, training the relation classifier. The follow ``data_handler.py`` shows an example of how to create a data adapter into the Snorkel training process. The existing ``data_handler.py`` uses SNOMED CT stated relationships as training data. While this does not produce a good model, it is used here for demonstration purposes. Users should supply their own ``DataHandler`` class as appropriate for their data set.
+There are two aspects of training. First, training the relation classifier. The file ``data_handler.py`` shows an example of how to create a data adapter into the Snorkel training process. The existing ``data_handler.py`` uses SNOMED CT stated relationships as training data. While this does not produce the best model, it is used here for demonstration purposes. Users should supply their own ``DataHandler`` class as appropriate for their data set.
 
 Users should also add their own labeling functions to the ``label_functions.py`` file. These labeling functions are critical to producing a quality training data set. See the [Snorkel tutorial](https://www.snorkel.org/use-cases/01-spam-tutorial) for more information on labeling functions.
 
-Next, the dependency parser can be fine-tuned. See ``focus/train_parser.py`` for more details.
+Next, the dependency parser can be fine-tuned. See ``focus/train_parser.py`` for more details. Accurate dependency parsing is critical for accurate mapping into standardized representations. It is recommended to manually annotate at least some problem descriptions from your corpus to fine-tune the model. The format for training data is explained in the ``focus/train_parser.py`` file.
 
 ## Starting the UMLS/SNOMED CT Server
 A server is included to wrap several functions pertaining to the UMLS and SNOMED CT (such as parent/child lookups, SNOMED -> UMLS conversions, etc.).
 
-run ``server.py``
+``python server.py``
 
 ## Starting the Standardization Server
-A trained model can be exposed via an HTTP server via the following Python file:
+A trained model can be exposed via an HTTP server via the running following Python file:
 
-run ``rest_api.py``
+``python rest_api.py``
 
 ## Standardization Server Endpoints
-There is currently one endpoint exposed in the API, with inputs of the problem string and the desired output format:
+There is currently one endpoint exposed via the API, with inputs of the problem string and the desired output format:
 
 ``/process?dx=[clinical problem string]&?format=[owl|fhir|snomed|raw]``
 
